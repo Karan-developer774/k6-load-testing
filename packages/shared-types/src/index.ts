@@ -144,7 +144,7 @@ export type ExecutionStatus =
   | 'ERROR';
 
 // Test Performance Result
-export type TestResultVerdict = 'PASSED' | 'FAILED' | 'UNKNOWN';
+export type TestResultVerdict = 'PASSED' | 'FAILED' | 'SLA_EXCEEDED' | 'UNKNOWN';
 
 // Real-Time Telemetry Snapshot
 export interface MetricSnapshot {

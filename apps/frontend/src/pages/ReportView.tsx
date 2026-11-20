@@ -94,10 +94,16 @@ export const ReportView: React.FC<ReportViewProps> = ({ executionId }) => {
               className={`px-2 py-0.5 rounded text-[11px] font-medium ${
                 execution.verdict === 'PASSED'
                   ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
+                  : execution.verdict === 'SLA_EXCEEDED' || (execution.verdict === 'FAILED' && (execution.errorRate || 0) < 5)
+                  ? 'bg-amber-950/60 text-amber-400 border border-amber-800/60'
                   : 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
               }`}
             >
-              {execution.verdict}
+              {execution.verdict === 'PASSED'
+                ? 'Passed'
+                : execution.verdict === 'SLA_EXCEEDED' || (execution.verdict === 'FAILED' && (execution.errorRate || 0) < 5)
+                ? 'SLA Exceeded'
+                : 'Failed'}
             </span>
           </div>
           <p className="text-xs text-zinc-500 mt-0.5 font-mono">
@@ -116,14 +122,14 @@ export const ReportView: React.FC<ReportViewProps> = ({ executionId }) => {
       </div>
 
       {/* SLA / Status Diagnostic Banner */}
-      {execution.verdict === 'FAILED' && execution.errorRate >= 100 && (
+      {execution.verdict === 'FAILED' && (execution.errorRate || 0) >= 5 && (
         <div className="bg-rose-950/30 border border-rose-800/40 p-3.5 rounded-lg text-xs text-rose-300">
-          <strong>Target Connection Failed:</strong> 100% of requests failed to connect. The server at <code className="text-zinc-200">{configurationSnapshot?.request?.url}</code> was offline, dropped connections, or timed out.
+          <strong>Target Connection Failed:</strong> {execution.errorRate >= 100 ? '100% of requests failed to connect.' : `High failure rate (${execution.errorRate}%).`} The server at <code className="text-zinc-200">{configurationSnapshot?.request?.url}</code> was offline, dropped connections, or timed out.
         </div>
       )}
-      {execution.verdict === 'FAILED' && execution.errorRate < 100 && (
+      {(execution.verdict === 'SLA_EXCEEDED' || (execution.verdict === 'FAILED' && (execution.errorRate || 0) < 5)) && (
         <div className="bg-amber-950/30 border border-amber-800/40 p-3.5 rounded-lg text-xs text-amber-200">
-          <strong>SLA Target Breached:</strong> The load test successfully sent {execution.totalRequests?.toLocaleString()} requests to the API, but the observed response latency (P95: {execution.p95Latency?.toFixed(1)}ms) exceeded your SLA target threshold.
+          <strong>SLA Target Breached:</strong> The load test successfully processed {execution.totalRequests?.toLocaleString()} requests ({(100 - (execution.errorRate || 0)).toFixed(2)}% success), but observed response latency (P95: {execution.p95Latency?.toFixed(1)}ms) exceeded your SLA threshold.
         </div>
       )}
       {execution.verdict === 'PASSED' && (

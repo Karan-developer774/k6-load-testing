@@ -33,8 +33,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onViewReport, onViewLi
     const matchesSearch =
       e.testName.toLowerCase().includes(search.toLowerCase()) ||
       e.id.toLowerCase().includes(search.toLowerCase());
+    const isSlaBreach = e.verdict === 'SLA_EXCEEDED' || (e.verdict === 'FAILED' && (e.errorRate || 0) < 5);
     const matchesVerdict =
-      filterVerdict === 'ALL' || e.verdict === filterVerdict || (filterVerdict === 'RUNNING' && e.status === 'RUNNING');
+      filterVerdict === 'ALL' ||
+      e.verdict === filterVerdict ||
+      (filterVerdict === 'SLA_EXCEEDED' && isSlaBreach) ||
+      (filterVerdict === 'RUNNING' && e.status === 'RUNNING');
     return matchesSearch && matchesVerdict;
   });
 
@@ -72,7 +76,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onViewReport, onViewLi
         </div>
 
         <div className="flex items-center gap-1 bg-[#111114] p-1 rounded-md border border-zinc-800 text-xs">
-          {['ALL', 'PASSED', 'FAILED', 'RUNNING'].map((v) => (
+          {['ALL', 'PASSED', 'SLA_EXCEEDED', 'FAILED', 'RUNNING'].map((v) => (
             <button
               key={v}
               onClick={() => setFilterVerdict(v)}
@@ -82,7 +86,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onViewReport, onViewLi
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              {v}
+              {v === 'SLA_EXCEEDED' ? 'SLA EXCEEDED' : v}
             </button>
           ))}
         </div>
@@ -123,20 +127,18 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onViewReport, onViewLi
                         className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
                           e.verdict === 'PASSED'
                             ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
-                            : e.errorRate >= 100
-                            ? 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
-                            : e.errorRate > 0
-                            ? 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
-                            : 'bg-amber-950/60 text-amber-400 border border-amber-800/60'
+                            : e.verdict === 'SLA_EXCEEDED' || (e.verdict === 'FAILED' && (e.errorRate || 0) < 5)
+                            ? 'bg-amber-950/60 text-amber-400 border border-amber-800/60'
+                            : 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
                         }`}
                       >
                         {e.verdict === 'PASSED'
                           ? 'Passed'
+                          : e.verdict === 'SLA_EXCEEDED' || (e.verdict === 'FAILED' && (e.errorRate || 0) < 5)
+                          ? 'SLA Exceeded'
                           : e.errorRate >= 100
                           ? 'Target Offline'
-                          : e.errorRate > 0
-                          ? `Errors (${e.errorRate}%)`
-                          : 'SLA Exceeded'}
+                          : `Failed (${e.errorRate}%)`}
                       </span>
                     </td>
                     <td className="py-2.5 px-4 text-zinc-400">

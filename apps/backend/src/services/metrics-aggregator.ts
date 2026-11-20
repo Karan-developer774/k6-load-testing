@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { MetricSnapshot, ExecutionSummaryReport, TestConfiguration } from '@k6-platform/shared-types';
+import { MetricSnapshot, ExecutionSummaryReport, TestConfiguration, TestResultVerdict } from '@k6-platform/shared-types';
 
 interface SecondBucket {
   second: number;
@@ -194,7 +194,7 @@ export class MetricsAggregator extends EventEmitter {
 
   public generateFinalSummary(
     configSnapshot: TestConfiguration,
-    verdict: 'PASSED' | 'FAILED' | 'UNKNOWN' = 'PASSED',
+    verdict: TestResultVerdict = 'PASSED',
     errorMessage?: string
   ): ExecutionSummaryReport {
     this.allLatencies.sort((a, b) => a - b);
@@ -239,7 +239,15 @@ export class MetricsAggregator extends EventEmitter {
     });
 
     const anyFailedThreshold = thresholdResults.some((t) => !t.passed);
-    const finalVerdict = anyFailedThreshold ? 'FAILED' : verdict;
+    let finalVerdict: TestResultVerdict = 'PASSED';
+
+    if (this.cumulativeTotalRequests === 0 || errorRate >= 50 || verdict === 'FAILED') {
+      finalVerdict = 'FAILED';
+    } else if (anyFailedThreshold) {
+      finalVerdict = errorRate > 5 ? 'FAILED' : 'SLA_EXCEEDED';
+    } else {
+      finalVerdict = 'PASSED';
+    }
 
     return {
       executionId: this.executionId,

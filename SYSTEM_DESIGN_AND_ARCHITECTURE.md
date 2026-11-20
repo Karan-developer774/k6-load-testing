@@ -129,7 +129,7 @@ erDiagram
         string id PK "exec_timestamp_random"
         string testName
         string status "QUEUED | RUNNING | STOPPING | COMPLETED | ABORTED | ERROR"
-        string verdict "PASSED | FAILED | UNKNOWN"
+        string verdict "PASSED | SLA_EXCEEDED | FAILED | UNKNOWN"
         string configurationSnapshot "Immutable JSON of test definition"
         string generatedScript "Full k6 ES6 script executed"
         datetime startedAt
@@ -271,9 +271,14 @@ sequenceDiagram
     Runner->>Agg: aggregator.stop()
     Agg->>Agg: generateFinalSummary() & evaluateThresholds()
     Agg->>DB: Bulk insert ExecutionMetric snapshots & update TestExecution
-    Agg->>SSE: Emit 'completed' event (verdict: PASSED / FAILED)
-    UI->>UI: Display Final Verdict & Enable Full Report View
+    Agg->>SSE: Emit 'completed' event (verdict: PASSED / SLA_EXCEEDED / FAILED)
+    UI->>UI: Display Final Verdict & Diagnostic Banner (Distinguish SLA Latency Breach vs Target Failure)
 ```
+
+### Execution Verdict Determination & SLA Gates
+1. **`PASSED`**: All HTTP requests were processed within defined error limits and all configured SLA thresholds passed (or SLA enforcement was disabled for pure load benchmarking).
+2. **`SLA_EXCEEDED`**: The API processed all traffic successfully (error rate < 5%), but response latency (e.g., P95 / P99) was slower than the user's SLA target limit. Marked with an amber badge and detailed diagnostic message.
+3. **`FAILED`**: The test experienced critical failures (high error rate $\ge$ 5%, server offline, connection resets, DNS resolution failure, or execution crash). Marked with a red badge.
 
 ### The 1-Second Sliding-Window Aggregator
 * Located in `apps/backend/src/services/metrics-aggregator.ts`.

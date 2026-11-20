@@ -143,10 +143,16 @@ export const LiveMonitor: React.FC<LiveMonitorProps> = ({
                 className={`px-2 py-0.5 rounded text-[11px] font-medium ${
                   verdict === 'PASSED'
                     ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
+                    : verdict === 'SLA_EXCEEDED' || (verdict === 'FAILED' && latest.errorRate < 5)
+                    ? 'bg-amber-950/60 text-amber-400 border border-amber-800/60'
                     : 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
                 }`}
               >
-                {verdict}
+                {verdict === 'PASSED'
+                  ? 'Passed'
+                  : verdict === 'SLA_EXCEEDED' || (verdict === 'FAILED' && latest.errorRate < 5)
+                  ? 'SLA Exceeded'
+                  : 'Failed'}
               </span>
             )}
           </div>
@@ -175,6 +181,27 @@ export const LiveMonitor: React.FC<LiveMonitorProps> = ({
           )}
         </div>
       </div>
+
+      {/* Completion Diagnostic Banner */}
+      {isFinished && (
+        <>
+          {verdict === 'PASSED' && (
+            <div className="p-3 bg-emerald-950/30 border border-emerald-800/40 rounded-lg text-xs text-emerald-300">
+              <strong>Test Successful:</strong> All {latest.totalRequests.toLocaleString()} requests completed with an average throughput of {latest.rps} req/s and met all performance thresholds.
+            </div>
+          )}
+          {(verdict === 'SLA_EXCEEDED' || (verdict === 'FAILED' && latest.errorRate < 5)) && (
+            <div className="p-3 bg-amber-950/30 border border-amber-800/40 rounded-lg text-xs text-amber-200">
+              <strong>SLA Target Breached:</strong> All {latest.totalRequests.toLocaleString()} requests were successfully processed by the API with a {(100 - latest.errorRate).toFixed(1)}% success rate. However, observed P95 latency ({latest.p95}ms) exceeded your SLA threshold.
+            </div>
+          )}
+          {verdict === 'FAILED' && latest.errorRate >= 5 && (
+            <div className="p-3 bg-rose-950/30 border border-rose-800/40 rounded-lg text-xs text-rose-300">
+              <strong>Target Connection Failed:</strong> {latest.errorRate >= 100 ? '100% of requests failed to connect (server offline or dropped).' : `High failure rate (${latest.errorRate}%).`} Check your endpoint URL and target health.
+            </div>
+          )}
+        </>
+      )}
 
       {/* KPI Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">

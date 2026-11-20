@@ -3,12 +3,9 @@ import { PerformanceThreshold } from '@k6-platform/shared-types';
 export function buildK6Thresholds(thresholds: PerformanceThreshold[] = []): Record<string, string[]> {
   const result: Record<string, string[]> = {};
 
-  // Always supply sensible defaults if none are provided
+  // If no thresholds configured, run in benchmark mode without failing arbitrary thresholds
   if (!thresholds || thresholds.length === 0) {
-    return {
-      http_req_failed: ['rate<0.01'],
-      http_req_duration: ['p(95)<500'],
-    };
+    return result;
   }
 
   for (const th of thresholds) {

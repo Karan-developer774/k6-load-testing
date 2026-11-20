@@ -38,8 +38,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const totalRuns = executions.length;
   const passedRuns = executions.filter((e) => e.verdict === 'PASSED').length;
-  const failedRuns = executions.filter((e) => e.verdict === 'FAILED').length;
-  const passRate = totalRuns > 0 ? ((passedRuns / totalRuns) * 100).toFixed(0) : '0';
+  const slaExceededRuns = executions.filter(
+    (e) => e.verdict === 'SLA_EXCEEDED' || (e.verdict === 'FAILED' && (e.errorRate || 0) < 5)
+  ).length;
+  const failedRuns = executions.filter(
+    (e) => e.verdict === 'FAILED' && (e.errorRate || 0) >= 5
+  ).length;
+  const passRate = totalRuns > 0 ? (((passedRuns + slaExceededRuns) / totalRuns) * 100).toFixed(0) : '0';
 
   const avgRpsAll =
     totalRuns > 0
@@ -189,20 +194,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
                           exec.verdict === 'PASSED'
                             ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
-                            : exec.errorRate >= 100
-                            ? 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
-                            : exec.errorRate > 0
-                            ? 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
-                            : 'bg-amber-950/60 text-amber-400 border border-amber-800/60'
+                            : exec.verdict === 'SLA_EXCEEDED' || (exec.verdict === 'FAILED' && (exec.errorRate || 0) < 5)
+                            ? 'bg-amber-950/60 text-amber-400 border border-amber-800/60'
+                            : 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
                         }`}
                       >
                         {exec.verdict === 'PASSED'
                           ? 'Passed'
+                          : exec.verdict === 'SLA_EXCEEDED' || (exec.verdict === 'FAILED' && (exec.errorRate || 0) < 5)
+                          ? 'SLA Exceeded'
                           : exec.errorRate >= 100
                           ? 'Target Offline'
-                          : exec.errorRate > 0
-                          ? `Errors (${exec.errorRate}%)`
-                          : 'SLA Exceeded'}
+                          : `Failed (${exec.errorRate}%)`}
                       </span>
                     </td>
                     <td className="py-2.5 px-4 text-zinc-300">{exec.durationSeconds}s</td>
