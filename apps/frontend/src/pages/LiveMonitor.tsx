@@ -1,15 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import {
-  Activity,
-  Square,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Zap,
-  Terminal,
-  ArrowRight,
-  TrendingUp,
-} from 'lucide-react';
+import { Square, ArrowRight, Terminal } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -43,12 +33,10 @@ export const LiveMonitor: React.FC<LiveMonitorProps> = ({
 
   const logsEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Auto-scroll logs
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
-  // Connect to SSE stream
   useEffect(() => {
     const sseUrl = getSseUrl(executionId);
     const eventSource = new EventSource(sseUrl);
@@ -84,7 +72,6 @@ export const LiveMonitor: React.FC<LiveMonitorProps> = ({
     });
 
     eventSource.onerror = async () => {
-      // Check current execution status from REST in case SSE closed on completion
       try {
         const res = await fetchExecution(executionId);
         if (res.data) {
@@ -100,7 +87,6 @@ export const LiveMonitor: React.FC<LiveMonitorProps> = ({
     };
   }, [executionId]);
 
-  // Handle Stop
   const handleStop = async () => {
     try {
       setIsStopping(true);
@@ -116,18 +102,18 @@ export const LiveMonitor: React.FC<LiveMonitorProps> = ({
   const latest = snapshots[snapshots.length - 1] || {
     activeVus: 0,
     rps: 0,
+    p50: 0,
     p95: 0,
+    p99: 0,
     avgLatency: 0,
     errorRate: 0,
     totalRequests: 0,
-    checksPassed: 0,
     elapsedSeconds: 0,
   };
 
   const chartData = snapshots.map((s) => ({
     time: `${s.elapsedSeconds}s`,
     p50: s.p50,
-    p90: s.p90,
     p95: s.p95,
     p99: s.p99,
     rps: s.rps,
@@ -138,49 +124,42 @@ export const LiveMonitor: React.FC<LiveMonitorProps> = ({
   const isFinished = ['COMPLETED', 'ABORTED', 'ERROR'].includes(status);
 
   return (
-    <div className="space-y-6">
-      {/* Top Status Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0d1322] p-4 rounded-xl border border-slate-800">
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#111114] p-4 rounded-lg border border-zinc-800">
         <div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                status === 'RUNNING'
-                  ? 'bg-emerald-500 animate-ping'
-                  : status === 'STOPPING'
-                  ? 'bg-amber-500 animate-pulse'
-                  : 'bg-slate-500'
-              }`}
-            />
-            <h2 className="text-base font-bold text-white">Live Load Test Monitor</h2>
-            <span className="text-xs font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-sm font-semibold text-zinc-100">Live Execution Monitor</h1>
+            <span className="text-xs font-mono text-zinc-400 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
               {executionId}
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
-            <span>Status: <strong className="text-white">{status}</strong></span>
+          <div className="flex items-center gap-2 mt-1 text-xs text-zinc-400">
+            <span>
+              Status: <strong className="text-zinc-200">{status}</strong>
+            </span>
             {verdict !== 'UNKNOWN' && (
               <span
-                className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                className={`px-2 py-0.5 rounded text-[11px] font-medium ${
                   verdict === 'PASSED'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                    ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
+                    : 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
                 }`}
               >
-                Verdict: {verdict}
+                {verdict}
               </span>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {status === 'RUNNING' && (
             <button
               onClick={handleStop}
               disabled={isStopping}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs shadow-md shadow-rose-600/30 transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-rose-400 border border-zinc-700 font-medium text-xs transition disabled:opacity-50"
             >
-              <Square className="h-3.5 w-3.5 fill-white" />
+              <Square className="h-3 w-3 fill-rose-400" />
               {isStopping ? 'Stopping...' : 'Stop Test'}
             </button>
           )}
@@ -188,131 +167,160 @@ export const LiveMonitor: React.FC<LiveMonitorProps> = ({
           {isFinished && (
             <button
               onClick={() => onViewReport(executionId)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/30 transition"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-zinc-100 hover:bg-white text-zinc-900 font-medium text-xs transition"
             >
-              View Full Report
-              <ArrowRight className="h-4 w-4" />
+              <span>View Report</span>
+              <ArrowRight className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
       </div>
 
-      {/* Real-time KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      {/* KPI Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <MetricCard
-          title="Active Virtual Users"
+          title="Virtual Users"
           value={latest.activeVus}
-          subValue="Concurrent threads"
-          icon={<Activity className="h-4 w-4" />}
-          accent="blue"
+          subValue="Active concurrency"
         />
         <MetricCard
-          title="Current Throughput"
+          title="Throughput"
           value={`${latest.rps} rps`}
           subValue="Requests per second"
-          icon={<Zap className="h-4 w-4" />}
-          accent="purple"
         />
         <MetricCard
           title="P95 Latency"
           value={`${latest.p95} ms`}
-          subValue="95th percentile"
-          icon={<TrendingUp className="h-4 w-4" />}
-          accent="amber"
+          subValue={`P50: ${latest.p50} ms`}
         />
         <MetricCard
           title="Error Rate"
           value={`${latest.errorRate}%`}
-          subValue="Failed HTTP requests"
-          icon={<XCircle className="h-4 w-4" />}
-          accent={latest.errorRate > 1 ? 'rose' : 'emerald'}
+          subValue="Failed requests"
+          status={latest.errorRate > 1 ? 'error' : 'normal'}
         />
         <MetricCard
           title="Total Requests"
           value={latest.totalRequests.toLocaleString()}
           subValue={`Elapsed: ${latest.elapsedSeconds}s`}
-          icon={<Clock className="h-4 w-4" />}
-          accent="emerald"
         />
       </div>
 
-      {/* Real-time Charts */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Chart 1: Latency Distribution */}
-        <div className="bg-[#0d1322] p-4 rounded-xl border border-slate-800">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-white">Response Latency Distribution (ms)</span>
-            <span className="text-[11px] font-mono text-purple-400">P50 / P90 / P95 / P99</span>
+        {/* Latency Chart */}
+        <div className="bg-[#111114] p-4 rounded-lg border border-zinc-800">
+          <div className="flex items-center justify-between mb-3 text-xs">
+            <span className="font-medium text-zinc-200">Latency (ms)</span>
+            <div className="flex items-center gap-3 text-zinc-400 font-mono text-[11px]">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-blue-500" /> P50 (Median)
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-amber-500" /> P95
+              </span>
+            </div>
           </div>
 
-          <div className="h-64 w-full">
+          <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="time" stroke="#64748b" tick={{ fontSize: 10 }} />
-                <YAxis stroke="#64748b" tick={{ fontSize: 10 }} unit="ms" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                <XAxis dataKey="time" stroke="#71717a" tick={{ fontSize: 11 }} />
+                <YAxis stroke="#71717a" tick={{ fontSize: 11 }} unit="ms" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0f172a',
-                    borderColor: '#334155',
-                    fontSize: '11px',
+                    backgroundColor: '#18181b',
+                    borderColor: '#27272a',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: '#fafafa',
                   }}
                 />
-                <Legend wrapperStyle={{ fontSize: '11px' }} />
-                <Line type="monotone" dataKey="p50" stroke="#3b82f6" dot={false} strokeWidth={2} name="P50" />
-                <Line type="monotone" dataKey="p90" stroke="#a855f7" dot={false} strokeWidth={2} name="P90" />
-                <Line type="monotone" dataKey="p95" stroke="#f59e0b" dot={false} strokeWidth={2} name="P95" />
-                <Line type="monotone" dataKey="p99" stroke="#ef4444" dot={false} strokeWidth={1.5} name="P99" />
+                <Line
+                  type="monotone"
+                  dataKey="p50"
+                  stroke="#3b82f6"
+                  dot={false}
+                  strokeWidth={1.5}
+                  name="P50 Latency"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="p95"
+                  stroke="#f59e0b"
+                  dot={false}
+                  strokeWidth={1.5}
+                  name="P95 Latency"
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Chart 2: Throughput (RPS) vs Active VUs */}
-        <div className="bg-[#0d1322] p-4 rounded-xl border border-slate-800">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-white">Throughput (RPS) & Active VUs</span>
-            <span className="text-[11px] font-mono text-blue-400">Dual Metric Stream</span>
+        {/* Throughput Chart */}
+        <div className="bg-[#111114] p-4 rounded-lg border border-zinc-800">
+          <div className="flex items-center justify-between mb-3 text-xs">
+            <span className="font-medium text-zinc-200">Throughput & Virtual Users</span>
+            <div className="flex items-center gap-3 text-zinc-400 font-mono text-[11px]">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" /> Requests/sec
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-zinc-400" /> Active VUs
+              </span>
+            </div>
           </div>
 
-          <div className="h-64 w-full">
+          <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="rpsGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="time" stroke="#64748b" tick={{ fontSize: 10 }} />
-                <YAxis stroke="#64748b" tick={{ fontSize: 10 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                <XAxis dataKey="time" stroke="#71717a" tick={{ fontSize: 11 }} />
+                <YAxis stroke="#71717a" tick={{ fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0f172a',
-                    borderColor: '#334155',
-                    fontSize: '11px',
+                    backgroundColor: '#18181b',
+                    borderColor: '#27272a',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: '#fafafa',
                   }}
                 />
-                <Legend wrapperStyle={{ fontSize: '11px' }} />
-                <Area type="monotone" dataKey="rps" stroke="#10b981" fill="url(#rpsGrad)" strokeWidth={2} name="Requests/sec" />
-                <Line type="monotone" dataKey="vus" stroke="#6366f1" dot={false} strokeWidth={2} name="Active VUs" />
+                <Area
+                  type="monotone"
+                  dataKey="rps"
+                  stroke="#10b981"
+                  fill="#10b981"
+                  fillOpacity={0.1}
+                  strokeWidth={1.5}
+                  name="RPS"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="vus"
+                  stroke="#71717a"
+                  strokeDasharray="4 4"
+                  dot={false}
+                  strokeWidth={1.5}
+                  name="Active VUs"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Terminal Log Output Window */}
-      <div className="bg-[#080c14] rounded-xl border border-slate-800 p-4">
-        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-800 text-xs font-semibold text-slate-400">
-          <Terminal className="h-4 w-4 text-emerald-400" />
-          <span>k6 Worker Process Log Console</span>
+      {/* Console output */}
+      <div className="bg-[#0c0c0e] rounded-lg border border-zinc-800 p-3">
+        <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-zinc-800 text-xs text-zinc-400">
+          <Terminal className="h-3.5 w-3.5" />
+          <span>Execution Log</span>
         </div>
 
-        <div className="h-44 overflow-y-auto font-mono text-[11px] text-slate-300 space-y-1">
+        <div className="h-36 overflow-y-auto font-mono text-xs text-zinc-300 space-y-0.5">
           {logs.length === 0 ? (
-            <span className="text-slate-600">// Waiting for execution output stream...</span>
+            <span className="text-zinc-600">// Waiting for worker output...</span>
           ) : (
             logs.map((log, i) => (
               <div key={i} className="leading-relaxed">

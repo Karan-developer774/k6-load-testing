@@ -1,18 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Zap,
-  Play,
-  Code,
-  Shield,
-  Layers,
-  Sliders,
-  CheckCircle,
-  Plus,
-  Trash2,
-  AlertTriangle,
-  Eye,
-  FileCheck,
-} from 'lucide-react';
+import { Play, Code, Plus, Trash2, AlertCircle } from 'lucide-react';
 import {
   TestConfiguration,
   HttpMethod,
@@ -28,24 +15,18 @@ interface TestBuilderProps {
 }
 
 export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) => {
-  // Test Name & Description
-  const [testName, setTestName] = useState('Production API Load Test');
-  const [description, setDescription] = useState('Evaluating latency and throughput under peak load');
+  const [testName, setTestName] = useState('API Load Test');
+  const [description, setDescription] = useState('Benchmark API under concurrent load');
 
-  // Request Definition
-  const [url, setUrl] = useState('http://localhost:3001/api/v1/mock/users');
+  const [url, setUrl] = useState('https://fakestoreapi.com/products');
   const [method, setMethod] = useState<HttpMethod>('GET');
   const [timeoutMs, setTimeoutMs] = useState(30000);
 
-  // Headers & Params
   const [headers, setHeaders] = useState<Array<{ key: string; value: string; enabled: boolean }>>([
     { key: 'Accept', value: 'application/json', enabled: true },
   ]);
-  const [queryParams, setQueryParams] = useState<Array<{ key: string; value: string; enabled: boolean }>>([
-    { key: 'limit', value: '50', enabled: true },
-  ]);
+  const [queryParams, setQueryParams] = useState<Array<{ key: string; value: string; enabled: boolean }>>([]);
 
-  // Auth
   const [authType, setAuthType] = useState<AuthType>('none');
   const [bearerToken, setBearerToken] = useState('');
   const [basicUsername, setBasicUsername] = useState('');
@@ -53,11 +34,9 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
   const [apiKeyName, setApiKeyName] = useState('X-API-Key');
   const [apiKeyValue, setApiKeyValue] = useState('');
 
-  // Body
   const [bodyType, setBodyType] = useState<BodyType>('none');
-  const [bodyContent, setBodyContent] = useState('{\n  "name": "Load Test Entity",\n  "active": true\n}');
+  const [bodyContent, setBodyContent] = useState('{\n  "name": "Test Item"\n}');
 
-  // Load Profile
   const [strategy, setStrategy] = useState<LoadStrategy>('constant-vus');
   const [vus, setVus] = useState<number>(100);
   const [duration, setDuration] = useState('60s');
@@ -65,25 +44,20 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
   const [rampDownDuration, setRampDownDuration] = useState('10s');
   const [arrivalRate, setArrivalRate] = useState<number>(100);
 
-  // Stages for ramping profiles
   const [stages, setStages] = useState<Array<{ duration: string; target: number }>>([
     { duration: '15s', target: 50 },
     { duration: '30s', target: 200 },
-    { duration: '30s', target: 500 },
     { duration: '15s', target: 0 },
   ]);
 
-  // Thresholds
   const [thresholdP95, setThresholdP95] = useState(500);
   const [thresholdErrorRate, setThresholdErrorRate] = useState(0.01);
 
-  // UI state
   const [activeTab, setActiveTab] = useState<'request' | 'load' | 'thresholds' | 'preview'>('request');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [generatedScriptPreview, setGeneratedScriptPreview] = useState<string | null>(null);
 
-  // Build current TestConfiguration object
   const buildCurrentConfig = (): TestConfiguration => {
     let authConfig: any = { type: 'none' };
     if (authType === 'bearer') authConfig = { type: 'bearer', token: bearerToken };
@@ -123,21 +97,6 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
     };
   };
 
-  // Pre-fill Mock Users API Example
-  const loadMockExample = () => {
-    setTestName('Mock Users API Stress Test');
-    setUrl('http://localhost:3001/api/v1/mock/users');
-    setMethod('GET');
-    setStrategy('constant-vus');
-    setVus(500);
-    setDuration('120s');
-    setRampUpDuration('10s');
-    setRampDownDuration('10s');
-    setThresholdP95(400);
-    setThresholdErrorRate(0.01);
-  };
-
-  // Preview generated k6 script
   const handlePreviewScript = async () => {
     try {
       setValidationError(null);
@@ -159,7 +118,6 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
     }
   };
 
-  // Launch Test
   const handleStartTest = async () => {
     try {
       setIsSubmitting(true);
@@ -186,119 +144,77 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
 
   return (
     <div className="space-y-6">
-      {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <Zap className="h-5 w-5 text-blue-500" />
-            Dynamic API Load Test Builder
-          </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Configure request parameters, select load strategies, and execute tests without manual code edits.
+          <h1 className="text-lg font-semibold text-zinc-100">Configure Load Test</h1>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            Define target request parameters, load pattern, and performance thresholds.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            onClick={loadMockExample}
-            className="px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-600 bg-slate-800/80 text-slate-300 text-xs font-semibold hover:text-white transition"
-          >
-            Pre-fill 500 VUs Example
-          </button>
-
-          <button
             onClick={handlePreviewScript}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/10 text-indigo-400 text-xs font-semibold hover:bg-indigo-500/20 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition"
           >
-            <Code className="h-4 w-4" />
-            Preview k6 Script
+            <Code className="h-3.5 w-3.5" />
+            Preview Script
           </button>
 
           <button
             onClick={handleStartTest}
             disabled={isSubmitting}
-            className="flex items-center gap-2 px-5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/30 transition active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-zinc-100 hover:bg-white text-zinc-900 text-xs font-semibold transition disabled:opacity-50"
           >
-            <Play className="h-4 w-4 fill-white" />
-            {isSubmitting ? 'Validating...' : 'Start Load Test'}
+            <Play className="h-3 w-3 fill-zinc-900" />
+            {isSubmitting ? 'Starting...' : 'Start Test'}
           </button>
         </div>
       </div>
 
       {/* Validation Error Alert */}
       {validationError && (
-        <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-xs text-rose-300 flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-rose-400 flex-shrink-0" />
-          <div>
-            <div className="font-bold text-rose-200">Validation / Security Alert</div>
-            <div>{validationError}</div>
-          </div>
+        <div className="rounded-lg border border-rose-900/60 bg-rose-950/30 p-3.5 text-xs text-rose-300 flex items-start gap-2.5">
+          <AlertCircle className="h-4 w-4 text-rose-400 flex-shrink-0 mt-0.5" />
+          <div className="leading-relaxed">{validationError}</div>
         </div>
       )}
 
-      {/* Tabs Switcher */}
-      <div className="flex items-center gap-2 border-b border-slate-800">
-        <button
-          onClick={() => setActiveTab('request')}
-          className={`flex items-center gap-2 pb-2.5 px-3 text-xs font-semibold border-b-2 transition ${
-            activeTab === 'request'
-              ? 'border-blue-500 text-blue-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Layers className="h-4 w-4" />
-          1. Request & Authentication
-        </button>
-
-        <button
-          onClick={() => setActiveTab('load')}
-          className={`flex items-center gap-2 pb-2.5 px-3 text-xs font-semibold border-b-2 transition ${
-            activeTab === 'load'
-              ? 'border-blue-500 text-blue-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Sliders className="h-4 w-4" />
-          2. Load Profile & Stages
-        </button>
-
-        <button
-          onClick={() => setActiveTab('thresholds')}
-          className={`flex items-center gap-2 pb-2.5 px-3 text-xs font-semibold border-b-2 transition ${
-            activeTab === 'thresholds'
-              ? 'border-blue-500 text-blue-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <CheckCircle className="h-4 w-4" />
-          3. Performance Thresholds
-        </button>
-
-        <button
-          onClick={() => setActiveTab('preview')}
-          className={`flex items-center gap-2 pb-2.5 px-3 text-xs font-semibold border-b-2 transition ${
-            activeTab === 'preview'
-              ? 'border-blue-500 text-blue-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Eye className="h-4 w-4" />
-          4. Generated Script Preview
-        </button>
+      {/* Clean Tabs */}
+      <div className="flex items-center gap-1 border-b border-zinc-800 text-xs">
+        {[
+          { id: 'request', label: '1. Request' },
+          { id: 'load', label: '2. Load Profile' },
+          { id: 'thresholds', label: '3. Thresholds' },
+          { id: 'preview', label: '4. Script Preview' },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id as any)}
+            className={`px-3 py-2 border-b-2 font-medium transition ${
+              activeTab === t.id
+                ? 'border-zinc-200 text-zinc-100'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {/* TAB 1: REQUEST & AUTH */}
+      {/* TAB 1: REQUEST */}
       {activeTab === 'request' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            {/* Target URL & Method */}
-            <div className="bg-[#0d1322] p-4 rounded-xl border border-slate-800 space-y-3">
-              <label className="text-xs font-semibold text-slate-300">Target API Endpoint</label>
+            {/* Target URL */}
+            <div className="bg-[#111114] p-4 rounded-lg border border-zinc-800 space-y-2.5">
+              <label className="text-xs font-medium text-zinc-300">Target Endpoint</label>
               <div className="flex items-center gap-2">
                 <select
                   value={method}
                   onChange={(e) => setMethod(e.target.value as HttpMethod)}
-                  className="bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-xs font-bold focus:outline-none focus:border-blue-500"
+                  className="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:border-zinc-500"
                 >
                   <option value="GET">GET</option>
                   <option value="POST">POST</option>
@@ -306,34 +222,27 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
                   <option value="PATCH">PATCH</option>
                   <option value="DELETE">DELETE</option>
                   <option value="HEAD">HEAD</option>
-                  <option value="OPTIONS">OPTIONS</option>
                 </select>
 
                 <input
                   type="text"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://api.example.com/v1/resource"
-                  className="flex-1 bg-slate-900 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-blue-500"
+                  placeholder="https://api.example.com/endpoint"
+                  className="flex-1 bg-zinc-900 border border-zinc-700 text-zinc-100 rounded px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-zinc-500"
                 />
-              </div>
-
-              <div className="flex items-center justify-between text-[11px] text-slate-500">
-                <span>SSRF Protection enforces domain authorization and private CIDR restrictions.</span>
-                <span className="text-blue-400">Timeout: {timeoutMs}ms</span>
               </div>
             </div>
 
-            {/* Headers Editor */}
-            <div className="bg-[#0d1322] p-4 rounded-xl border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-300">HTTP Headers</span>
+            {/* Headers */}
+            <div className="bg-[#111114] p-4 rounded-lg border border-zinc-800 space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium text-zinc-300">Headers</span>
                 <button
                   onClick={() => setHeaders([...headers, { key: '', value: '', enabled: true }])}
-                  className="flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300"
+                  className="text-xs text-zinc-400 hover:text-zinc-200 transition"
                 >
-                  <Plus className="h-3 w-3" />
-                  Add Header
+                  + Add header
                 </button>
               </div>
 
@@ -348,33 +257,33 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
                         next[i].enabled = e.target.checked;
                         setHeaders(next);
                       }}
-                      className="rounded bg-slate-900 border-slate-700 text-blue-600"
+                      className="rounded bg-zinc-900 border-zinc-700"
                     />
                     <input
                       type="text"
-                      placeholder="Header Name (e.g. Content-Type)"
+                      placeholder="Header Name"
                       value={h.key}
                       onChange={(e) => {
                         const next = [...headers];
                         next[i].key = e.target.value;
                         setHeaders(next);
                       }}
-                      className="flex-1 bg-slate-900 border border-slate-700 text-slate-200 rounded px-2.5 py-1.5 text-xs font-mono"
+                      className="flex-1 bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1 text-xs font-mono"
                     />
                     <input
                       type="text"
-                      placeholder="Header Value"
+                      placeholder="Value"
                       value={h.value}
                       onChange={(e) => {
                         const next = [...headers];
                         next[i].value = e.target.value;
                         setHeaders(next);
                       }}
-                      className="flex-1 bg-slate-900 border border-slate-700 text-slate-200 rounded px-2.5 py-1.5 text-xs font-mono"
+                      className="flex-1 bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1 text-xs font-mono"
                     />
                     <button
                       onClick={() => setHeaders(headers.filter((_, idx) => idx !== i))}
-                      className="text-slate-500 hover:text-rose-400 p-1"
+                      className="text-zinc-500 hover:text-zinc-300 p-1"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -383,18 +292,18 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
               </div>
             </div>
 
-            {/* Request Body Editor */}
+            {/* Request Body */}
             {['POST', 'PUT', 'PATCH'].includes(method) && (
-              <div className="bg-[#0d1322] p-4 rounded-xl border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-300">Request Body Payload</span>
-                  <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-md text-[11px]">
-                    {(['none', 'json', 'xml', 'urlencoded', 'text'] as BodyType[]).map((b) => (
+              <div className="bg-[#111114] p-4 rounded-lg border border-zinc-800 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-zinc-300">Request Body</span>
+                  <div className="flex items-center gap-1">
+                    {(['none', 'json', 'text'] as BodyType[]).map((b) => (
                       <button
                         key={b}
                         onClick={() => setBodyType(b)}
-                        className={`px-2 py-0.5 rounded capitalize ${
-                          bodyType === b ? 'bg-blue-600 text-white font-bold' : 'text-slate-400'
+                        className={`px-2 py-0.5 rounded text-[11px] capitalize ${
+                          bodyType === b ? 'bg-zinc-800 text-zinc-100 font-medium' : 'text-zinc-400'
                         }`}
                       >
                         {b}
@@ -405,111 +314,81 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
 
                 {bodyType !== 'none' && (
                   <textarea
-                    rows={6}
+                    rows={5}
                     value={bodyContent}
                     onChange={(e) => setBodyContent(e.target.value)}
-                    className="w-full bg-[#090d16] border border-slate-700 rounded-lg p-3 text-xs font-mono text-emerald-400 focus:outline-none focus:border-blue-500"
-                    placeholder="Enter payload data..."
+                    className="w-full bg-[#0c0c0e] border border-zinc-700 rounded p-2.5 text-xs font-mono text-zinc-200 focus:outline-none focus:border-zinc-500"
                   />
                 )}
               </div>
             )}
           </div>
 
-          {/* Right sidebar: Auth & Test Meta */}
+          {/* Right Column: Auth & Test Info */}
           <div className="space-y-4">
-            <div className="bg-[#0d1322] p-4 rounded-xl border border-slate-800 space-y-3">
-              <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                <Shield className="h-4 w-4 text-emerald-400" />
-                Authentication Protocol
-              </span>
-
+            <div className="bg-[#111114] p-4 rounded-lg border border-zinc-800 space-y-3">
+              <label className="text-xs font-medium text-zinc-300 block">Authentication</label>
               <select
                 value={authType}
                 onChange={(e) => setAuthType(e.target.value as AuthType)}
-                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-2 text-xs focus:outline-none focus:border-blue-500"
+                className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 rounded p-2 text-xs focus:outline-none focus:border-zinc-500"
               >
                 <option value="none">No Authentication</option>
                 <option value="bearer">Bearer Token</option>
-                <option value="basic">Basic Auth (Username / Password)</option>
-                <option value="apiKey">API Key (Header / Query)</option>
+                <option value="basic">Basic Auth</option>
+                <option value="apiKey">API Key</option>
               </select>
 
               {authType === 'bearer' && (
-                <div className="space-y-1">
-                  <label className="text-[11px] text-slate-400">Bearer Token</label>
+                <div>
                   <input
                     type="password"
                     value={bearerToken}
                     onChange={(e) => setBearerToken(e.target.value)}
-                    placeholder="eyJhbGciOi..."
-                    className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded px-2.5 py-1.5 text-xs font-mono"
+                    placeholder="Token string"
+                    className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 text-xs font-mono"
                   />
-                  <p className="text-[10px] text-slate-500">Encrypted at rest using AES-256-GCM.</p>
                 </div>
               )}
 
               {authType === 'basic' && (
                 <div className="space-y-2">
-                  <div>
-                    <label className="text-[11px] text-slate-400">Username</label>
-                    <input
-                      type="text"
-                      value={basicUsername}
-                      onChange={(e) => setBasicUsername(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded px-2.5 py-1.5 text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-slate-400">Password</label>
-                    <input
-                      type="password"
-                      value={basicPassword}
-                      onChange={(e) => setBasicPassword(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded px-2.5 py-1.5 text-xs"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {authType === 'apiKey' && (
-                <div className="space-y-2">
                   <input
                     type="text"
-                    placeholder="Key Name (e.g. X-API-KEY)"
-                    value={apiKeyName}
-                    onChange={(e) => setApiKeyName(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded px-2.5 py-1.5 text-xs font-mono"
+                    placeholder="Username"
+                    value={basicUsername}
+                    onChange={(e) => setBasicUsername(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1 text-xs"
                   />
                   <input
                     type="password"
-                    placeholder="API Key Value"
-                    value={apiKeyValue}
-                    onChange={(e) => setApiKeyValue(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded px-2.5 py-1.5 text-xs font-mono"
+                    placeholder="Password"
+                    value={basicPassword}
+                    onChange={(e) => setBasicPassword(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1 text-xs"
                   />
                 </div>
               )}
             </div>
 
-            <div className="bg-[#0d1322] p-4 rounded-xl border border-slate-800 space-y-3">
-              <span className="text-xs font-semibold text-slate-300">Test Metadata</span>
+            <div className="bg-[#111114] p-4 rounded-lg border border-zinc-800 space-y-3">
+              <label className="text-xs font-medium text-zinc-300 block">Test Information</label>
               <div>
-                <label className="text-[11px] text-slate-400">Test Name</label>
+                <label className="text-[11px] text-zinc-400">Name</label>
                 <input
                   type="text"
                   value={testName}
                   onChange={(e) => setTestName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 text-white rounded px-2.5 py-1.5 text-xs mt-1"
+                  className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded px-2.5 py-1 text-xs mt-1"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-slate-400">Description</label>
+                <label className="text-[11px] text-zinc-400">Description</label>
                 <input
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 text-slate-300 rounded px-2.5 py-1.5 text-xs mt-1"
+                  className="w-full bg-zinc-900 border border-zinc-700 text-zinc-300 rounded px-2.5 py-1 text-xs mt-1"
                 />
               </div>
             </div>
@@ -517,76 +396,33 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
         </div>
       )}
 
-      {/* TAB 2: LOAD CONFIGURATION & PROFILE */}
+      {/* TAB 2: LOAD PROFILE */}
       {activeTab === 'load' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-5">
-            {/* Strategy Selector */}
-            <div className="bg-[#0d1322] p-5 rounded-xl border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  Load Execution Strategy
-                </span>
-                <span className="text-xs font-mono text-blue-400">k6 Executor: {strategy}</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[
-                  {
-                    id: 'constant-vus',
-                    name: 'Constant Virtual Users',
-                    desc: 'Maintains fixed concurrent users for a specified duration',
-                  },
-                  {
-                    id: 'ramping-vus',
-                    name: 'Ramping Virtual Users',
-                    desc: 'Gradually scales users up and down in configured stages',
-                  },
-                  {
-                    id: 'constant-arrival-rate',
-                    name: 'Constant Arrival Rate',
-                    desc: 'Enforces fixed iterations/sec independent of response latency',
-                  },
-                  {
-                    id: 'ramping-arrival-rate',
-                    name: 'Ramping Arrival Rate',
-                    desc: 'Scales target iterations per second over time stages',
-                  },
-                  {
-                    id: 'shared-iterations',
-                    name: 'Shared Iterations',
-                    desc: 'Fixed total iterations shared across a pool of VUs',
-                  },
-                  {
-                    id: 'per-vu-iterations',
-                    name: 'Per-VU Iterations',
-                    desc: 'Each virtual user executes a fixed number of iterations',
-                  },
-                ].map((s) => (
-                  <div
-                    key={s.id}
-                    onClick={() => setStrategy(s.id as LoadStrategy)}
-                    className={`p-3 rounded-xl border cursor-pointer transition ${
-                      strategy === s.id
-                        ? 'border-blue-500 bg-blue-500/10 text-white shadow-sm'
-                        : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="text-xs font-bold text-slate-200">{s.name}</div>
-                    <div className="text-[11px] text-slate-400 mt-1">{s.desc}</div>
-                  </div>
-                ))}
-              </div>
+          <div className="lg:col-span-2 space-y-4">
+            <div className="bg-[#111114] p-4 rounded-lg border border-zinc-800 space-y-3">
+              <label className="text-xs font-medium text-zinc-300 block">Strategy</label>
+              <select
+                value={strategy}
+                onChange={(e) => setStrategy(e.target.value as LoadStrategy)}
+                className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 rounded p-2 text-xs focus:outline-none focus:border-zinc-500 font-mono"
+              >
+                <option value="constant-vus">Constant Virtual Users (constant-vus)</option>
+                <option value="ramping-vus">Ramping Virtual Users (ramping-vus)</option>
+                <option value="constant-arrival-rate">Constant Arrival Rate (constant-arrival-rate)</option>
+                <option value="ramping-arrival-rate">Ramping Arrival Rate (ramping-arrival-rate)</option>
+                <option value="shared-iterations">Shared Iterations (shared-iterations)</option>
+                <option value="per-vu-iterations">Per-VU Iterations (per-vu-iterations)</option>
+              </select>
             </div>
 
-            {/* Inputs based on strategy */}
-            <div className="bg-[#0d1322] p-5 rounded-xl border border-slate-800 space-y-4">
+            <div className="bg-[#111114] p-4 rounded-lg border border-zinc-800 space-y-4">
               {strategy === 'constant-vus' && (
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between text-xs font-semibold mb-2">
-                      <span className="text-slate-300">Virtual Users (Concurrency)</span>
-                      <span className="text-blue-400 font-mono font-bold">{vus} VUs</span>
+                    <div className="flex justify-between text-xs font-medium mb-1.5">
+                      <span className="text-zinc-300">Concurrent Virtual Users</span>
+                      <span className="font-mono text-zinc-100 font-semibold">{vus} VUs</span>
                     </div>
                     <input
                       type="range"
@@ -594,45 +430,36 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
                       max={1000}
                       value={vus}
                       onChange={(e) => setVus(Number(e.target.value))}
-                      className="w-full accent-blue-500 cursor-pointer"
+                      className="w-full accent-zinc-200 cursor-pointer"
                     />
-                    <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
-                      <span>1 VU</span>
-                      <span>250 VUs</span>
-                      <span>500 VUs</span>
-                      <span>1,000 VUs</span>
-                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-3 text-xs">
                     <div>
-                      <label className="text-[11px] text-slate-400">Ramp-Up Duration</label>
+                      <label className="text-zinc-400 text-[11px]">Ramp-Up</label>
                       <input
                         type="text"
                         value={rampUpDuration}
                         onChange={(e) => setRampUpDuration(e.target.value)}
-                        placeholder="10s"
-                        className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2 text-xs font-mono mt-1"
+                        className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded p-1.5 font-mono mt-1"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400">Plateau Duration</label>
+                      <label className="text-zinc-400 text-[11px]">Duration</label>
                       <input
                         type="text"
                         value={duration}
                         onChange={(e) => setDuration(e.target.value)}
-                        placeholder="60s"
-                        className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2 text-xs font-mono mt-1"
+                        className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded p-1.5 font-mono mt-1"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400">Ramp-Down Duration</label>
+                      <label className="text-zinc-400 text-[11px]">Ramp-Down</label>
                       <input
                         type="text"
                         value={rampDownDuration}
                         onChange={(e) => setRampDownDuration(e.target.value)}
-                        placeholder="10s"
-                        className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2 text-xs font-mono mt-1"
+                        className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded p-1.5 font-mono mt-1"
                       />
                     </div>
                   </div>
@@ -641,50 +468,45 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
 
               {strategy === 'ramping-vus' && (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-300">Execution Stages</span>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-zinc-300">Stages</span>
                     <button
                       onClick={() => setStages([...stages, { duration: '30s', target: 100 }])}
-                      className="flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300"
+                      className="text-zinc-400 hover:text-zinc-200 transition"
                     >
-                      <Plus className="h-3 w-3" />
-                      Add Stage
+                      + Add Stage
                     </button>
                   </div>
 
                   <div className="space-y-2">
                     {stages.map((st, i) => (
-                      <div key={i} className="flex items-center gap-3 bg-slate-900 p-2.5 rounded-lg border border-slate-800">
-                        <span className="text-xs font-mono text-slate-400 w-14">Stage {i + 1}</span>
-                        <div className="flex-1 flex items-center gap-2">
-                          <span className="text-[11px] text-slate-500">Duration:</span>
-                          <input
-                            type="text"
-                            value={st.duration}
-                            onChange={(e) => {
-                              const next = [...stages];
-                              next[i].duration = e.target.value;
-                              setStages(next);
-                            }}
-                            className="w-20 bg-slate-800 border border-slate-700 text-white rounded px-2 py-1 text-xs font-mono"
-                          />
-                        </div>
-                        <div className="flex-1 flex items-center gap-2">
-                          <span className="text-[11px] text-slate-500">Target VUs:</span>
-                          <input
-                            type="number"
-                            value={st.target}
-                            onChange={(e) => {
-                              const next = [...stages];
-                              next[i].target = Number(e.target.value);
-                              setStages(next);
-                            }}
-                            className="w-24 bg-slate-800 border border-slate-700 text-white rounded px-2 py-1 text-xs font-mono"
-                          />
-                        </div>
+                      <div key={i} className="flex items-center gap-2 bg-zinc-900/60 p-2 rounded border border-zinc-800 text-xs">
+                        <span className="text-zinc-400 font-mono w-14">Stage {i + 1}</span>
+                        <input
+                          type="text"
+                          value={st.duration}
+                          onChange={(e) => {
+                            const next = [...stages];
+                            next[i].duration = e.target.value;
+                            setStages(next);
+                          }}
+                          placeholder="Duration"
+                          className="w-20 bg-zinc-900 border border-zinc-700 text-zinc-100 rounded px-2 py-1 font-mono"
+                        />
+                        <input
+                          type="number"
+                          value={st.target}
+                          onChange={(e) => {
+                            const next = [...stages];
+                            next[i].target = Number(e.target.value);
+                            setStages(next);
+                          }}
+                          placeholder="Target VUs"
+                          className="w-24 bg-zinc-900 border border-zinc-700 text-zinc-100 rounded px-2 py-1 font-mono"
+                        />
                         <button
                           onClick={() => setStages(stages.filter((_, idx) => idx !== i))}
-                          className="text-slate-500 hover:text-rose-400 p-1"
+                          className="text-zinc-500 hover:text-zinc-300 p-1"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -695,23 +517,23 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
               )}
 
               {strategy === 'constant-arrival-rate' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="text-[11px] text-slate-400">Iterations / Requests Per Second</label>
+                    <label className="text-zinc-400 text-[11px]">Target Requests / Sec</label>
                     <input
                       type="number"
                       value={arrivalRate}
                       onChange={(e) => setArrivalRate(Number(e.target.value))}
-                      className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2 text-xs font-mono mt-1"
+                      className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded p-1.5 font-mono mt-1"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-slate-400">Duration</label>
+                    <label className="text-zinc-400 text-[11px]">Duration</label>
                     <input
                       type="text"
                       value={duration}
                       onChange={(e) => setDuration(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2 text-xs font-mono mt-1"
+                      className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded p-1.5 font-mono mt-1"
                     />
                   </div>
                 </div>
@@ -719,86 +541,63 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
             </div>
           </div>
 
-          {/* Right Column: Visual Load Profile Preview */}
           <div className="space-y-4">
             <VisualLoadCurve loadProfile={buildCurrentConfig().loadProfile} />
-
-            <div className="bg-[#0d1322] p-4 rounded-xl border border-slate-800 space-y-2 text-xs text-slate-400">
-              <span className="font-bold text-slate-200">Execution Capacity Note:</span>
-              <p>
-                In k6, Virtual Users (VUs) execute code concurrently. A test of 500 VUs maintains 500 active threads, not a static 500 RPS. Throughput scales inversely with response latency.
-              </p>
-            </div>
           </div>
         </div>
       )}
 
       {/* TAB 3: THRESHOLDS */}
       {activeTab === 'thresholds' && (
-        <div className="max-w-2xl bg-[#0d1322] p-6 rounded-xl border border-slate-800 space-y-6">
+        <div className="max-w-xl bg-[#111114] p-5 rounded-lg border border-zinc-800 space-y-4 text-xs">
           <div>
-            <h3 className="text-sm font-bold text-white">Performance SLA Thresholds</h3>
-            <p className="text-xs text-slate-400 mt-1">
-              Tests will be marked as <span className="text-rose-400 font-bold">FAILED</span> if any of these conditions are breached during execution.
+            <h3 className="font-semibold text-zinc-200">SLA Thresholds</h3>
+            <p className="text-zinc-400 text-[11px] mt-0.5">
+              Tests will evaluate to FAILED if any criteria are exceeded.
             </p>
           </div>
 
-          <div className="space-y-4">
-            <div className="p-4 rounded-lg border border-slate-800 bg-slate-900/60 space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-slate-200">HTTP Failure Rate Threshold</span>
-                <span className="text-blue-400 font-mono">http_req_failed rate &lt; {(thresholdErrorRate * 100).toFixed(1)}%</span>
-              </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-zinc-300 font-medium">Max Allowed Error Rate (0.01 = 1%)</label>
               <input
                 type="number"
                 step="0.005"
-                min="0"
-                max="1"
                 value={thresholdErrorRate}
                 onChange={(e) => setThresholdErrorRate(Number(e.target.value))}
-                className="w-full bg-slate-800 border border-slate-700 text-white rounded p-2 text-xs font-mono"
+                className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded p-2 font-mono mt-1"
               />
-              <span className="text-[11px] text-slate-500">Standard SLA: Below 0.01 (1% failure tolerance).</span>
             </div>
 
-            <div className="p-4 rounded-lg border border-slate-800 bg-slate-900/60 space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-slate-200">P95 Response Latency Cap</span>
-                <span className="text-purple-400 font-mono">http_req_duration p(95) &lt; {thresholdP95}ms</span>
-              </div>
+            <div>
+              <label className="text-zinc-300 font-medium">P95 Latency Cap (ms)</label>
               <input
                 type="number"
                 step="50"
-                min="10"
-                max="10000"
                 value={thresholdP95}
                 onChange={(e) => setThresholdP95(Number(e.target.value))}
-                className="w-full bg-slate-800 border border-slate-700 text-white rounded p-2 text-xs font-mono"
+                className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded p-2 font-mono mt-1"
               />
-              <span className="text-[11px] text-slate-500">95% of all requests must finish faster than this duration.</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 4: SCRIPT PREVIEW */}
+      {/* TAB 4: PREVIEW */}
       {activeTab === 'preview' && (
-        <div className="bg-[#0d1322] p-5 rounded-xl border border-slate-800 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileCheck className="h-4 w-4 text-emerald-400" />
-              <span className="text-xs font-bold text-white">Dynamic k6 ES6 Script Generated</span>
-            </div>
+        <div className="bg-[#111114] p-4 rounded-lg border border-zinc-800 space-y-3">
+          <div className="flex items-center justify-between text-xs text-zinc-300">
+            <span className="font-medium">Generated k6 ES6 Script</span>
             <button
               onClick={handlePreviewScript}
-              className="text-xs text-blue-400 hover:text-blue-300 font-semibold"
+              className="text-zinc-400 hover:text-zinc-200 transition"
             >
-              Re-generate
+              Regenerate
             </button>
           </div>
 
-          <pre className="p-4 rounded-xl bg-[#080c14] border border-slate-800 text-xs font-mono text-slate-300 overflow-x-auto max-h-[500px]">
-            {generatedScriptPreview || '// Click "Preview k6 Script" above to generate the full code.'}
+          <pre className="p-3 bg-[#0c0c0e] border border-zinc-800 rounded text-xs font-mono text-zinc-300 overflow-x-auto max-h-[450px]">
+            {generatedScriptPreview || '// Click "Preview Script" to view code.'}
           </pre>
         </div>
       )}

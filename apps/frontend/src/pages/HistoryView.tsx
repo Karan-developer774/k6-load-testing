@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { History, Search, Download, ArrowRight, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { Search, Download, ArrowRight, RefreshCw } from 'lucide-react';
 import { fetchExecutions } from '../services/api.js';
 
 interface HistoryViewProps {
@@ -39,49 +39,47 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onViewReport, onViewLi
   });
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <History className="h-5 w-5 text-blue-500" />
-            Execution Run History
-          </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Full audit log of previous performance test executions and persisted metric archives.
+          <h1 className="text-lg font-semibold text-zinc-100">Execution History</h1>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            Log of previously completed performance tests and persisted metrics.
           </p>
         </div>
 
         <button
           onClick={loadData}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs border border-slate-700 transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 text-zinc-300 hover:text-white text-xs border border-zinc-700 transition"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 bg-[#0d1322] p-3 rounded-xl border border-slate-800">
-        <div className="flex-1 flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 w-full">
-          <Search className="h-4 w-4 text-slate-400" />
+      {/* Search and Filters */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 flex items-center gap-2 bg-[#111114] border border-zinc-800 rounded-md px-3 py-1.5">
+          <Search className="h-3.5 w-3.5 text-zinc-500" />
           <input
             type="text"
-            placeholder="Search by test name or execution ID..."
+            placeholder="Filter by test name or ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="bg-transparent text-xs text-slate-200 focus:outline-none w-full"
+            className="bg-transparent text-xs text-zinc-200 focus:outline-none w-full"
           />
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
+        <div className="flex items-center gap-1 bg-[#111114] p-1 rounded-md border border-zinc-800 text-xs">
           {['ALL', 'PASSED', 'FAILED', 'RUNNING'].map((v) => (
             <button
               key={v}
               onClick={() => setFilterVerdict(v)}
-              className={`px-3 py-1 rounded-md text-[11px] font-semibold transition ${
+              className={`px-2.5 py-1 rounded text-[11px] font-medium transition ${
                 filterVerdict === v
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-zinc-800 text-zinc-100'
+                  : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
               {v}
@@ -91,64 +89,62 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onViewReport, onViewLi
       </div>
 
       {/* Executions Table */}
-      <div className="bg-[#0d1322] rounded-xl border border-slate-800 overflow-hidden">
+      <div className="bg-[#111114] rounded-lg border border-zinc-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#090d16] text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-800">
+            <thead className="bg-[#0c0c0e] text-zinc-400 font-medium border-b border-zinc-800">
               <tr>
-                <th className="py-3 px-4">Test Name & Execution ID</th>
-                <th className="py-3 px-4">Verdict</th>
-                <th className="py-3 px-4">Date / Time</th>
-                <th className="py-3 px-4">Duration</th>
-                <th className="py-3 px-4">Total Requests</th>
-                <th className="py-3 px-4">Avg RPS</th>
-                <th className="py-3 px-4">P95 Latency</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-2.5 px-4 font-normal">Test Name</th>
+                <th className="py-2.5 px-4 font-normal">Verdict</th>
+                <th className="py-2.5 px-4 font-normal">Date</th>
+                <th className="py-2.5 px-4 font-normal">Duration</th>
+                <th className="py-2.5 px-4 font-normal">Requests</th>
+                <th className="py-2.5 px-4 font-normal">Avg RPS</th>
+                <th className="py-2.5 px-4 font-normal">P95 Latency</th>
+                <th className="py-2.5 px-4 text-right font-normal">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-zinc-800/60 font-mono text-[11px]">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-8 text-slate-500">
-                    No matching test executions found.
+                  <td colSpan={8} className="text-center py-8 text-zinc-500 font-sans text-xs">
+                    No matching runs found.
                   </td>
                 </tr>
               ) : (
                 filtered.map((e) => (
-                  <tr key={e.id} className="hover:bg-slate-800/30 transition">
-                    <td className="py-3 px-4 font-medium text-slate-200">
+                  <tr key={e.id} className="hover:bg-zinc-800/20 transition">
+                    <td className="py-2.5 px-4 font-sans font-medium text-zinc-200">
                       <div>{e.testName}</div>
-                      <div className="text-[10px] text-slate-500 font-mono">{e.id}</div>
+                      <div className="text-[10px] text-zinc-500 font-mono">{e.id}</div>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-2.5 px-4 font-sans">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold ${
+                        className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
                           e.verdict === 'PASSED'
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
                             : e.verdict === 'FAILED'
-                            ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                            : 'bg-slate-800 text-slate-400'
+                            ? 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
+                            : 'bg-zinc-800 text-zinc-400'
                         }`}
                       >
-                        {e.verdict === 'PASSED' && <CheckCircle2 className="h-3 w-3" />}
-                        {e.verdict === 'FAILED' && <XCircle className="h-3 w-3" />}
                         {e.verdict}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-slate-400 font-mono">
-                      {new Date(e.createdAt).toLocaleString()}
+                    <td className="py-2.5 px-4 text-zinc-400">
+                      {new Date(e.createdAt).toLocaleDateString()} {new Date(e.createdAt).toLocaleTimeString()}
                     </td>
-                    <td className="py-3 px-4 font-mono">{e.durationSeconds}s</td>
-                    <td className="py-3 px-4 font-mono font-semibold">{e.totalRequests?.toLocaleString()}</td>
-                    <td className="py-3 px-4 font-mono text-blue-400">{e.avgRps?.toFixed(1)}</td>
-                    <td className="py-3 px-4 font-mono text-purple-400">{e.p95Latency?.toFixed(1)}ms</td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-2.5 px-4 text-zinc-300">{e.durationSeconds}s</td>
+                    <td className="py-2.5 px-4 text-zinc-300">{e.totalRequests?.toLocaleString()}</td>
+                    <td className="py-2.5 px-4 text-zinc-300">{e.avgRps?.toFixed(0)}</td>
+                    <td className="py-2.5 px-4 text-zinc-300">{e.p95Latency?.toFixed(1)}ms</td>
+                    <td className="py-2.5 px-4 text-right font-sans">
                       <div className="flex items-center justify-end gap-2">
                         <a
                           href={`/api/v1/reports/${e.id}/export.csv`}
                           download
-                          title="Download CSV"
-                          className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                          title="Export CSV"
+                          className="p-1 rounded text-zinc-400 hover:text-zinc-200 transition"
                         >
                           <Download className="h-3.5 w-3.5" />
                         </a>
@@ -156,14 +152,14 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onViewReport, onViewLi
                         {e.status === 'RUNNING' ? (
                           <button
                             onClick={() => onViewLive(e.id)}
-                            className="px-2.5 py-1 rounded bg-blue-600 text-white font-medium hover:bg-blue-500 text-xs"
+                            className="text-blue-400 hover:text-blue-300 font-medium text-xs"
                           >
                             Live
                           </button>
                         ) : (
                           <button
                             onClick={() => onViewReport(e.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-xs transition"
+                            className="inline-flex items-center gap-1 text-zinc-400 hover:text-zinc-200 text-xs transition"
                           >
                             Report
                             <ArrowRight className="h-3 w-3" />

@@ -15,86 +15,72 @@ function parseSeconds(val?: string): number {
 }
 
 export const VisualLoadCurve: React.FC<VisualLoadCurveProps> = ({ loadProfile }) => {
-  // Generate points for preview
   const data: Array<{ time: string; vus: number }> = [];
 
-  const parseStages = () => {
-    let currentSec = 0;
-    data.push({ time: '0s', vus: 0 });
+  let currentSec = 0;
+  data.push({ time: '0s', vus: 0 });
 
-    if (loadProfile.strategy === 'constant-vus') {
-      const targetVus = loadProfile.vus || 10;
-      const rampUp = parseSeconds(loadProfile.rampUpDuration);
-      const duration = parseSeconds(loadProfile.duration || '60s');
-      const rampDown = parseSeconds(loadProfile.rampDownDuration);
+  if (loadProfile.strategy === 'constant-vus') {
+    const targetVus = loadProfile.vus || 10;
+    const rampUp = parseSeconds(loadProfile.rampUpDuration);
+    const duration = parseSeconds(loadProfile.duration || '60s');
+    const rampDown = parseSeconds(loadProfile.rampDownDuration);
 
-      if (rampUp > 0) {
-        currentSec += rampUp;
-        data.push({ time: `${currentSec}s`, vus: targetVus });
-      } else {
-        data.push({ time: '0s', vus: targetVus });
-      }
-
-      currentSec += duration;
+    if (rampUp > 0) {
+      currentSec += rampUp;
       data.push({ time: `${currentSec}s`, vus: targetVus });
-
-      if (rampDown > 0) {
-        currentSec += rampDown;
-        data.push({ time: `${currentSec}s`, vus: 0 });
-      }
-    } else if (loadProfile.strategy === 'ramping-vus' && loadProfile.stages) {
-      for (const st of loadProfile.stages) {
-        const sec = parseSeconds(st.duration);
-        currentSec += sec;
-        data.push({ time: `${currentSec}s`, vus: st.target });
-      }
-    } else if (loadProfile.strategy === 'constant-arrival-rate') {
-      const rate = loadProfile.rate || 50;
-      const duration = parseSeconds(loadProfile.duration || '60s');
-      data.push({ time: '0s', vus: rate });
-      data.push({ time: `${duration}s`, vus: rate });
     } else {
-      const targetVus = loadProfile.vus || 10;
-      const duration = parseSeconds(loadProfile.duration || '60s');
       data.push({ time: '0s', vus: targetVus });
-      data.push({ time: `${duration}s`, vus: targetVus });
     }
-  };
 
-  parseStages();
+    currentSec += duration;
+    data.push({ time: `${currentSec}s`, vus: targetVus });
+
+    if (rampDown > 0) {
+      currentSec += rampDown;
+      data.push({ time: `${currentSec}s`, vus: 0 });
+    }
+  } else if (loadProfile.strategy === 'ramping-vus' && loadProfile.stages) {
+    for (const st of loadProfile.stages) {
+      const sec = parseSeconds(st.duration);
+      currentSec += sec;
+      data.push({ time: `${currentSec}s`, vus: st.target });
+    }
+  } else if (loadProfile.strategy === 'constant-arrival-rate') {
+    const rate = loadProfile.rate || 50;
+    const duration = parseSeconds(loadProfile.duration || '60s');
+    data.push({ time: '0s', vus: rate });
+    data.push({ time: `${duration}s`, vus: rate });
+  } else {
+    const targetVus = loadProfile.vus || 10;
+    const duration = parseSeconds(loadProfile.duration || '60s');
+    data.push({ time: '0s', vus: targetVus });
+    data.push({ time: `${duration}s`, vus: targetVus });
+  }
 
   const isArrivalRate = loadProfile.strategy.includes('arrival-rate');
-  const metricLabel = isArrivalRate ? 'Target Rate (req/s)' : 'Virtual Users (VUs)';
+  const metricLabel = isArrivalRate ? 'Target (req/s)' : 'Target VUs';
 
   return (
-    <div className="bg-[#0b101c] p-4 rounded-xl border border-slate-800">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold text-slate-300">
-          Load Curve Simulation Profile
-        </span>
-        <span className="text-[11px] font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
-          {metricLabel}
-        </span>
+    <div className="bg-[#111114] p-4 rounded-lg border border-zinc-800">
+      <div className="flex items-center justify-between mb-3 text-xs text-zinc-400">
+        <span className="font-medium text-zinc-300">Simulated Load Curve</span>
+        <span className="font-mono text-zinc-400 text-[11px]">{metricLabel}</span>
       </div>
 
-      <div className="h-44 w-full">
+      <div className="h-40 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
-            <defs>
-              <linearGradient id="loadCurveGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-            <XAxis dataKey="time" stroke="#64748b" tick={{ fontSize: 11 }} />
-            <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+            <XAxis dataKey="time" stroke="#71717a" tick={{ fontSize: 11 }} />
+            <YAxis stroke="#71717a" tick={{ fontSize: 11 }} />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#0f172a',
-                borderColor: '#334155',
-                borderRadius: '8px',
+                backgroundColor: '#18181b',
+                borderColor: '#27272a',
+                borderRadius: '6px',
                 fontSize: '12px',
+                color: '#fafafa',
               }}
             />
             <Area
@@ -102,9 +88,9 @@ export const VisualLoadCurve: React.FC<VisualLoadCurveProps> = ({ loadProfile })
               dataKey="vus"
               name={metricLabel}
               stroke="#3b82f6"
-              strokeWidth={2}
-              fillOpacity={1}
-              fill="url(#loadCurveGrad)"
+              strokeWidth={1.5}
+              fill="#3b82f6"
+              fillOpacity={0.1}
             />
           </AreaChart>
         </ResponsiveContainer>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, CheckCircle2, XCircle, Zap, Clock, ArrowRight, Play, RefreshCw, BarChart2 } from 'lucide-react';
+import { ArrowRight, Play, Plus, RefreshCw } from 'lucide-react';
 import { fetchExecutions, runTest } from '../services/api.js';
 import { MetricCard } from '../components/MetricCard.js';
 
@@ -39,19 +39,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const totalRuns = executions.length;
   const passedRuns = executions.filter((e) => e.verdict === 'PASSED').length;
   const failedRuns = executions.filter((e) => e.verdict === 'FAILED').length;
-  const passRate = totalRuns > 0 ? ((passedRuns / totalRuns) * 100).toFixed(1) : '0';
+  const passRate = totalRuns > 0 ? ((passedRuns / totalRuns) * 100).toFixed(0) : '0';
 
   const avgRpsAll =
     totalRuns > 0
       ? (executions.reduce((acc, curr) => acc + (curr.avgRps || 0), 0) / totalRuns).toFixed(0)
       : '0';
 
-  // Quick 10-VU mock test runner
   const handleQuickMockRun = async () => {
     try {
       setQuickRunning(true);
       const res = await runTest({
-        name: 'Quick Mock Users Load Test',
+        name: 'Quick Mock Users Test',
         request: {
           name: 'Get Mock Users',
           url: 'http://localhost:3001/api/v1/mock/users',
@@ -76,7 +75,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         onStartTest(res.executionId);
       }
     } catch (err) {
-      alert('Failed to launch quick test: ' + err);
+      alert('Failed to launch test: ' + err);
     } finally {
       setQuickRunning(false);
     }
@@ -84,84 +83,68 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900/40 via-indigo-900/30 to-purple-900/20 border border-blue-500/20 p-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20">
-              High-Performance API Load Testing
-            </span>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-white mt-2">
-              Performance Control Center
-            </h1>
-            <p className="text-sm text-slate-300 mt-1 max-w-xl">
-              Dynamically load test any HTTP endpoint with custom virtual users, ramp-up schedules, and real-time SLA metrics.
-            </p>
-          </div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-5">
+        <div>
+          <h1 className="text-lg font-semibold text-zinc-100">Load Test Dashboard</h1>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            Configure, execute, and monitor API performance tests powered by k6.
+          </p>
+        </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleQuickMockRun}
-              disabled={quickRunning}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-lg shadow-emerald-600/30 transition active:scale-95 disabled:opacity-50"
-            >
-              <Play className="h-4 w-4 fill-white" />
-              {quickRunning ? 'Launching...' : 'Quick Run (10 VUs / 10s)'}
-            </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleQuickMockRun}
+            disabled={quickRunning}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium border border-zinc-700 transition disabled:opacity-50"
+          >
+            <Play className="h-3 w-3" />
+            {quickRunning ? 'Launching...' : 'Quick Run (10s)'}
+          </button>
 
-            <button
-              onClick={onCreateNew}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-lg shadow-blue-600/30 transition active:scale-95"
-            >
-              <Zap className="h-4 w-4" />
-              Custom Load Test
-            </button>
-          </div>
+          <button
+            onClick={onCreateNew}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-zinc-100 hover:bg-white text-zinc-900 text-xs font-medium transition"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New Test
+          </button>
         </div>
       </div>
 
-      {/* Metrics Overview Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Overview Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricCard
-          title="Total Test Runs"
+          title="Total Executions"
           value={totalRuns}
-          subValue="Completed executions"
-          icon={<Activity className="h-4 w-4" />}
-          accent="blue"
+          subValue="Completed runs"
         />
         <MetricCard
           title="SLA Pass Rate"
           value={`${passRate}%`}
           subValue={`${passedRuns} passed · ${failedRuns} failed`}
-          icon={<CheckCircle2 className="h-4 w-4" />}
-          accent="emerald"
+          status={Number(passRate) >= 90 ? 'normal' : 'error'}
         />
         <MetricCard
-          title="Average Throughput"
-          value={`${avgRpsAll} req/s`}
-          subValue="System-wide performance"
-          icon={<Zap className="h-4 w-4" />}
-          accent="amber"
+          title="Avg Throughput"
+          value={`${avgRpsAll} rps`}
+          subValue="Across all tests"
         />
         <MetricCard
-          title="Active Workers"
-          value="1 / 2"
-          subValue="Local k6 runner ready"
-          icon={<Clock className="h-4 w-4" />}
-          accent="purple"
+          title="Engine Status"
+          value="Ready"
+          subValue="k6 process worker"
+          status="success"
         />
       </div>
 
       {/* Recent Executions Table */}
-      <div className="rounded-xl border border-slate-800 bg-[#0d1322] overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <BarChart2 className="h-4 w-4 text-blue-400" />
-            <h2 className="text-sm font-bold text-white">Recent Test Executions</h2>
-          </div>
+      <div className="bg-[#111114] rounded-lg border border-zinc-800">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 text-xs">
+          <span className="font-medium text-zinc-200">Recent Executions</span>
           <button
             onClick={loadData}
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white px-2.5 py-1 rounded bg-slate-800/60 hover:bg-slate-800 transition"
+            className="flex items-center gap-1 text-zinc-400 hover:text-zinc-200 transition"
           >
             <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -170,76 +153,66 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#090d16] text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-800">
+            <thead className="bg-[#0c0c0e] text-zinc-400 font-medium border-b border-zinc-800">
               <tr>
-                <th className="py-3 px-4">Test Name</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Verdict</th>
-                <th className="py-3 px-4">Duration</th>
-                <th className="py-3 px-4">Total Requests</th>
-                <th className="py-3 px-4">Avg RPS</th>
-                <th className="py-3 px-4">P95 Latency</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-2.5 px-4 font-normal">Test Name</th>
+                <th className="py-2.5 px-4 font-normal">Status</th>
+                <th className="py-2.5 px-4 font-normal">Verdict</th>
+                <th className="py-2.5 px-4 font-normal">Duration</th>
+                <th className="py-2.5 px-4 font-normal">Requests</th>
+                <th className="py-2.5 px-4 font-normal">Avg RPS</th>
+                <th className="py-2.5 px-4 font-normal">P95 Latency</th>
+                <th className="py-2.5 px-4 text-right font-normal">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-zinc-800/60 font-mono text-[11px]">
               {executions.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-8 text-slate-500">
-                    No test executions found. Click "Custom Load Test" or "Quick Run" to start.
+                  <td colSpan={8} className="text-center py-8 text-zinc-500 font-sans text-xs">
+                    No test runs found. Click "New Test" to begin.
                   </td>
                 </tr>
               ) : (
                 executions.map((exec) => (
-                  <tr key={exec.id} className="hover:bg-slate-800/30 transition">
-                    <td className="py-3 px-4 font-medium text-slate-200">
+                  <tr key={exec.id} className="hover:bg-zinc-800/20 transition">
+                    <td className="py-2.5 px-4 font-sans font-medium text-zinc-200">
                       <div>{exec.testName}</div>
-                      <div className="text-[10px] text-slate-500 font-mono">{exec.id}</div>
+                      <div className="text-[10px] text-zinc-500 font-mono">{exec.id}</div>
                     </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${
-                          exec.status === 'RUNNING'
-                            ? 'bg-blue-500/20 text-blue-400 animate-pulse'
-                            : exec.status === 'COMPLETED'
-                            ? 'bg-slate-800 text-slate-300'
-                            : 'bg-rose-500/20 text-rose-400'
-                        }`}
-                      >
+                    <td className="py-2.5 px-4 font-sans">
+                      <span className="text-zinc-300 font-medium">
                         {exec.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-2.5 px-4 font-sans">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold ${
+                        className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
                           exec.verdict === 'PASSED'
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
                             : exec.verdict === 'FAILED'
-                            ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                            : 'bg-slate-800 text-slate-400'
+                            ? 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
+                            : 'bg-zinc-800 text-zinc-400'
                         }`}
                       >
-                        {exec.verdict === 'PASSED' && <CheckCircle2 className="h-3 w-3" />}
-                        {exec.verdict === 'FAILED' && <XCircle className="h-3 w-3" />}
                         {exec.verdict}
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-mono">{exec.durationSeconds}s</td>
-                    <td className="py-3 px-4 font-mono font-semibold">{exec.totalRequests?.toLocaleString()}</td>
-                    <td className="py-3 px-4 font-mono text-blue-400">{exec.avgRps?.toFixed(1)}</td>
-                    <td className="py-3 px-4 font-mono text-purple-400">{exec.p95Latency?.toFixed(1)}ms</td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-2.5 px-4 text-zinc-300">{exec.durationSeconds}s</td>
+                    <td className="py-2.5 px-4 text-zinc-300">{exec.totalRequests?.toLocaleString()}</td>
+                    <td className="py-2.5 px-4 text-zinc-300">{exec.avgRps?.toFixed(0)}</td>
+                    <td className="py-2.5 px-4 text-zinc-300">{exec.p95Latency?.toFixed(1)}ms</td>
+                    <td className="py-2.5 px-4 text-right font-sans">
                       {exec.status === 'RUNNING' ? (
                         <button
                           onClick={() => onStartTest(exec.id)}
-                          className="px-2.5 py-1 rounded bg-blue-600 text-white font-medium hover:bg-blue-500 text-xs"
+                          className="text-blue-400 hover:text-blue-300 text-xs font-medium"
                         >
                           View Live
                         </button>
                       ) : (
                         <button
                           onClick={() => onViewReport(exec.id)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-xs transition"
+                          className="inline-flex items-center gap-1 text-zinc-400 hover:text-zinc-200 text-xs transition"
                         >
                           Report
                           <ArrowRight className="h-3 w-3" />

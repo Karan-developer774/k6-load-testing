@@ -4,22 +4,22 @@
 
 @layer base {
   body {
-    @apply bg-[#090d16] text-slate-100;
+    @apply bg-[#09090b] text-zinc-100;
   }
 }
 
-/* Custom scrollbars */
+/* Subtle, standard scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+  background: #27272a;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #3f3f46;
 }

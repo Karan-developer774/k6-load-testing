@@ -22,14 +22,14 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#090d16] text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[#09090b] text-zinc-100">
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         activeExecutionId={currentExecutionId}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6">
         {activeTab === 'dashboard' && (
           <Dashboard
             onStartTest={handleStartExecution}
@@ -64,11 +64,8 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-[#070b13] py-4 text-center text-xs text-slate-500">
-        <p>
-          Antigravity Load Testing Platform · High-Throughput Fastify Engine · Powered by Grafana k6
-        </p>
+      <footer className="border-t border-zinc-900 bg-[#070709] py-3.5 text-center text-xs text-zinc-500">
+        k6 Load Testing Platform · Fastify Core Engine
       </footer>
     </div>
   );
