@@ -1,0 +1,165 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      String   @default("ENGINEER") // ADMIN, ENGINEER, VIEWER
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects  Project[]
+}
+
+model Project {
+  id               String   @id @default(uuid())
+  name             String
+  description      String?
+  allowlistDomains String   @default("") // Comma-separated or JSON list of authorized domains
+  userId           String?
+  user             User?    @relation(fields: [userId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  apis             ApiDefinition[]
+  testConfigs      TestConfiguration[]
+  executions       TestExecution[]
+}
+
+model ApiDefinition {
+  id                   String   @id @default(uuid())
+  projectId            String?
+  project              Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name                 String
+  method               String   // GET, POST, PUT, DELETE, etc.
+  url                  String
+  headersJson          String   @default("[]")
+  queryParamsJson      String   @default("[]")
+  authType             String   @default("none")
+  authConfigEncrypted  String?  // AES-256-GCM encrypted credentials
+  bodyType             String   @default("none")
+  bodyContent          String?
+  timeoutMs            Int      @default(30000)
+  insecureSkipTlsVerify Boolean  @default(false)
+  tagsJson             String   @default("{}")
+  assertionsJson       String   @default("[]")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  testConfigurations   TestConfiguration[]
+}
+
+model TestConfiguration {
+  id              String         @id @default(uuid())
+  projectId       String?
+  project         Project?       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  apiDefinitionId String?
+  apiDefinition   ApiDefinition? @relation(fields: [apiDefinitionId], references: [id], onDelete: SetNull)
+  name            String
+  description     String?
+  strategy        String         // constant-vus, ramping-vus, etc.
+  loadProfileJson String         // Serialized LoadProfileConfig
+  thresholdsJson  String         // Serialized PerformanceThreshold[]
+  variablesJson   String         @default("{}")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  executions      TestExecution[]
+}
+
+model TestExecution {
+  id                    String    @id // e.g. exec_1732105000_abc123
+  projectId             String?
+  project               Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  testConfigId          String?
+  testConfiguration     TestConfiguration? @relation(fields: [testConfigId], references: [id], onDelete: SetNull)
+  testName              String
+  status                String    @default("QUEUED") // QUEUED, VALIDATING, RUNNING, STOPPING, COMPLETED, ABORTED, ERROR
+  verdict               String    @default("UNKNOWN") // PASSED, FAILED, UNKNOWN
+  configurationSnapshot String    // Immutable JSON snapshot of TestConfiguration
+  generatedScript       String?   // The actual k6 script executed
+  startedAt             DateTime?
+  finishedAt            DateTime?
+  durationSeconds       Int       @default(0)
+  
+  // Aggregated Performance Results
+  totalRequests         Int       @default(0)
+  failedRequests        Int       @default(0)
+  errorRate             Float     @default(0.0)
+  avgRps                Float     @default(0.0)
+  peakRps               Float     @default(0.0)
+  peakVus               Int       @default(0)
+  
+  minLatency            Float     @default(0.0)
+  maxLatency            Float     @default(0.0)
+  avgLatency            Float     @default(0.0)
+  p50Latency            Float     @default(0.0)
+  p90Latency            Float     @default(0.0)
+  p95Latency            Float     @default(0.0)
+  p99Latency            Float     @default(0.0)
+  
+  dataReceivedBytes     Int       @default(0)
+  dataSentBytes         Int       @default(0)
+  checksPassed          Int       @default(0)
+  checksFailed          Int       @default(0)
+  
+  thresholdResultsJson  String?   // JSON of threshold outcomes
+  errorMessage          String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  metrics               ExecutionMetric[]
+  logs                  ExecutionLog[]
+}
+
+model ExecutionMetric {
+  id              String        @id @default(uuid())
+  executionId     String
+  execution       TestExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  timestamp       DateTime
+  elapsedSeconds  Int
+  activeVus       Int
+  rps             Float
+  p50             Float
+  p90             Float
+  p95             Float
+  p99             Float
+  avgLatency      Float
+  minLatency      Float         @default(0.0)
+  maxLatency      Float         @default(0.0)
+  totalRequests   Int
+  failedRequests  Int
+  errorRate       Float
+  dataReceived    Int           @default(0)
+  dataSent        Int           @default(0)
+  checksPassed    Int           @default(0)
+  checksFailed    Int           @default(0)
+
+  @@index([executionId, elapsedSeconds])
+}
+
+model ExecutionLog {
+  id          String        @id @default(uuid())
+  executionId String
+  execution   TestExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  level       String        @default("INFO") // INFO, WARN, ERROR
+  message     String
+  timestamp   DateTime      @default(now())
+
+  @@index([executionId, timestamp])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String
+  ipAddress String?
+  createdAt DateTime @default(now())
+}

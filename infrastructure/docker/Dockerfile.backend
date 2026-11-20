@@ -1,0 +1,36 @@
+# Multi-stage production build for Fastify backend with k6
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+COPY package*.json ./
+COPY packages/ ./packages/
+COPY apps/backend/ ./apps/backend/
+
+RUN npm install
+RUN npm run build --workspace=@k6-platform/shared-types
+RUN npm run build --workspace=@k6-platform/k6-engine
+RUN cd apps/backend && npx prisma generate && npm run build
+
+# Production Runner with k6 installed
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Install k6
+RUN apk add --no-cache ca-certificates curl gnupg && \
+    curl -s https://dl.k6.io/key.gpg | gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg && \
+    echo "https://dl.k6.io/rpm/repo.rpm" || true
+
+# Direct binary install of k6 for alpine
+RUN curl -L https://github.com/grafana/k6/releases/download/v0.56.0/k6-v0.56.0-linux-amd64.tar.gz | tar -xz && \
+    mv k6-v0.56.0-linux-amd64/k6 /usr/local/bin/ && \
+    rm -rf k6-v0.56.0-linux-amd64
+
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/apps/backend ./apps/backend
+
+EXPOSE 3001
+CMD ["node", "apps/backend/dist/main.js"]

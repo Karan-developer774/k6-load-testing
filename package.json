@@ -1,0 +1,22 @@
+{
+  "name": "k6-load-testing-platform",
+  "version": "1.0.0",
+  "description": "Production-Grade Dynamic API Load Testing Platform Using Grafana k6 and Fastify",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "test": "npm run test --workspaces"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  }
+}
