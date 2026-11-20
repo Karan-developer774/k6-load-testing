@@ -126,7 +126,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ executionId, onSelectRun
 
         <div className="flex items-center gap-2">
           <a
-            href={`http://localhost:3001/api/v1/reports/${execution.id}/export.csv`}
+            href={`/api/v1/reports/${execution.id}/export.csv`}
             download
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition"
           >

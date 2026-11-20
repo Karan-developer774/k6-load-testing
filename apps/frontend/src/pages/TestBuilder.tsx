@@ -149,8 +149,13 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
       } else {
         setValidationError(res.error || 'Validation failed');
       }
-    } catch (err) {
-      setValidationError('Failed to generate script preview: ' + err);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('Failed to fetch')) {
+        setValidationError('Cannot connect to the Fastify backend API (port 3001). Please make sure the backend server is running via "npm run dev" or "npm run dev:backend".');
+      } else {
+        setValidationError('Failed to generate script preview: ' + msg);
+      }
     }
   };
 
@@ -167,8 +172,13 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
       } else {
         setValidationError(res.error || 'Failed to start execution');
       }
-    } catch (err) {
-      setValidationError(String(err));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('Failed to fetch')) {
+        setValidationError('Cannot connect to the Fastify backend API (port 3001). Please make sure the backend server is running via "npm run dev" or "npm run dev:backend".');
+      } else {
+        setValidationError(msg);
+      }
     } finally {
       setIsSubmitting(false);
     }

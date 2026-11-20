@@ -1,6 +1,6 @@
 import { TestConfiguration, ApiRequestDefinition } from '@k6-platform/shared-types';
 
-const API_BASE = 'http://localhost:3001/api/v1';
+const API_BASE = '/api/v1';
 
 export async function fetchApis() {
   const res = await fetch(`${API_BASE}/apis`);

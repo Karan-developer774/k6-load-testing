@@ -145,7 +145,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onViewReport, onViewLi
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <a
-                          href={`http://localhost:3001/api/v1/reports/${e.id}/export.csv`}
+                          href={`/api/v1/reports/${e.id}/export.csv`}
                           download
                           title="Download CSV"
                           className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
