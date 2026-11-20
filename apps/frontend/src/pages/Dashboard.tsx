@@ -189,12 +189,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
                           exec.verdict === 'PASSED'
                             ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
-                            : exec.verdict === 'FAILED'
+                            : exec.errorRate >= 100
                             ? 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
-                            : 'bg-zinc-800 text-zinc-400'
+                            : exec.errorRate > 0
+                            ? 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
+                            : 'bg-amber-950/60 text-amber-400 border border-amber-800/60'
                         }`}
                       >
-                        {exec.verdict}
+                        {exec.verdict === 'PASSED'
+                          ? 'Passed'
+                          : exec.errorRate >= 100
+                          ? 'Target Offline'
+                          : exec.errorRate > 0
+                          ? `Errors (${exec.errorRate}%)`
+                          : 'SLA Exceeded'}
                       </span>
                     </td>
                     <td className="py-2.5 px-4 text-zinc-300">{exec.durationSeconds}s</td>

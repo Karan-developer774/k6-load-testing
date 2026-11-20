@@ -50,8 +50,9 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
     { duration: '15s', target: 0 },
   ]);
 
-  const [thresholdP95, setThresholdP95] = useState(500);
-  const [thresholdErrorRate, setThresholdErrorRate] = useState(0.01);
+  const [enableThresholds, setEnableThresholds] = useState(false);
+  const [thresholdP95, setThresholdP95] = useState(1500);
+  const [thresholdErrorRate, setThresholdErrorRate] = useState(0.05);
 
   const [activeTab, setActiveTab] = useState<'request' | 'load' | 'thresholds' | 'preview'>('request');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,10 +91,12 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
         preAllocatedVUs: Math.max(10, Math.ceil(vus * 0.2)),
         maxVUs: vus * 2,
       },
-      thresholds: [
-        { metric: 'http_req_failed', aggregation: 'rate', operator: '<', value: thresholdErrorRate },
-        { metric: 'http_req_duration', aggregation: 'p95', operator: '<', value: thresholdP95 },
-      ],
+      thresholds: enableThresholds
+        ? [
+            { metric: 'http_req_failed', aggregation: 'rate', operator: '<', value: thresholdErrorRate },
+            { metric: 'http_req_duration', aggregation: 'p95', operator: '<', value: thresholdP95 },
+          ]
+        : [],
     };
   };
 
@@ -550,36 +553,56 @@ export const TestBuilder: React.FC<TestBuilderProps> = ({ onStartExecution }) =>
       {/* TAB 3: THRESHOLDS */}
       {activeTab === 'thresholds' && (
         <div className="max-w-xl bg-[#111114] p-5 rounded-lg border border-zinc-800 space-y-4 text-xs">
-          <div>
-            <h3 className="font-semibold text-zinc-200">SLA Thresholds</h3>
-            <p className="text-zinc-400 text-[11px] mt-0.5">
-              Tests will evaluate to FAILED if any criteria are exceeded.
-            </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="font-semibold text-zinc-200">SLA Performance Thresholds</h3>
+              <p className="text-zinc-400 text-[11px] mt-0.5">
+                Optional performance criteria. If enabled, the test marks the SLA as failed if your target API exceeds these limits.
+              </p>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={enableThresholds}
+                onChange={(e) => setEnableThresholds(e.target.checked)}
+                className="rounded bg-zinc-900 border-zinc-700"
+              />
+              <span className="text-xs text-zinc-200 font-medium">Enforce SLA</span>
+            </label>
           </div>
 
-          <div className="space-y-3">
-            <div>
-              <label className="text-zinc-300 font-medium">Max Allowed Error Rate (0.01 = 1%)</label>
-              <input
-                type="number"
-                step="0.005"
-                value={thresholdErrorRate}
-                onChange={(e) => setThresholdErrorRate(Number(e.target.value))}
-                className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded p-2 font-mono mt-1"
-              />
-            </div>
+          {enableThresholds ? (
+            <div className="space-y-3 pt-2">
+              <div>
+                <label className="text-zinc-300 font-medium">Max Allowed Error Rate (0.05 = 5%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={thresholdErrorRate}
+                  onChange={(e) => setThresholdErrorRate(Number(e.target.value))}
+                  className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded p-2 font-mono mt-1"
+                />
+              </div>
 
-            <div>
-              <label className="text-zinc-300 font-medium">P95 Latency Cap (ms)</label>
-              <input
-                type="number"
-                step="50"
-                value={thresholdP95}
-                onChange={(e) => setThresholdP95(Number(e.target.value))}
-                className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded p-2 font-mono mt-1"
-              />
+              <div>
+                <label className="text-zinc-300 font-medium">P95 Latency Cap (ms)</label>
+                <input
+                  type="number"
+                  step="100"
+                  value={thresholdP95}
+                  onChange={(e) => setThresholdP95(Number(e.target.value))}
+                  className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded p-2 font-mono mt-1"
+                />
+                <p className="text-[11px] text-zinc-500 mt-1">
+                  Public internet APIs under load typically range from 500ms to 2000ms.
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="p-3 bg-zinc-900/60 rounded border border-zinc-800 text-zinc-400 text-xs leading-relaxed">
+              SLA enforcement is currently <strong>disabled</strong>. The test will measure performance, generate full latency curves, and finish as <strong>COMPLETED / PASSED</strong> without failing due to latency caps.
+            </div>
+          )}
         </div>
       )}
 

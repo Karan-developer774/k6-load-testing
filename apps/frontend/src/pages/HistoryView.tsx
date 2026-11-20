@@ -123,12 +123,20 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onViewReport, onViewLi
                         className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
                           e.verdict === 'PASSED'
                             ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
-                            : e.verdict === 'FAILED'
+                            : e.errorRate >= 100
                             ? 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
-                            : 'bg-zinc-800 text-zinc-400'
+                            : e.errorRate > 0
+                            ? 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
+                            : 'bg-amber-950/60 text-amber-400 border border-amber-800/60'
                         }`}
                       >
-                        {e.verdict}
+                        {e.verdict === 'PASSED'
+                          ? 'Passed'
+                          : e.errorRate >= 100
+                          ? 'Target Offline'
+                          : e.errorRate > 0
+                          ? `Errors (${e.errorRate}%)`
+                          : 'SLA Exceeded'}
                       </span>
                     </td>
                     <td className="py-2.5 px-4 text-zinc-400">

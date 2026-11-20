@@ -115,6 +115,23 @@ export const ReportView: React.FC<ReportViewProps> = ({ executionId }) => {
         </a>
       </div>
 
+      {/* SLA / Status Diagnostic Banner */}
+      {execution.verdict === 'FAILED' && execution.errorRate >= 100 && (
+        <div className="bg-rose-950/30 border border-rose-800/40 p-3.5 rounded-lg text-xs text-rose-300">
+          <strong>Target Connection Failed:</strong> 100% of requests failed to connect. The server at <code className="text-zinc-200">{configurationSnapshot?.request?.url}</code> was offline, dropped connections, or timed out.
+        </div>
+      )}
+      {execution.verdict === 'FAILED' && execution.errorRate < 100 && (
+        <div className="bg-amber-950/30 border border-amber-800/40 p-3.5 rounded-lg text-xs text-amber-200">
+          <strong>SLA Target Breached:</strong> The load test successfully sent {execution.totalRequests?.toLocaleString()} requests to the API, but the observed response latency (P95: {execution.p95Latency?.toFixed(1)}ms) exceeded your SLA target threshold.
+        </div>
+      )}
+      {execution.verdict === 'PASSED' && (
+        <div className="bg-emerald-950/30 border border-emerald-800/40 p-3.5 rounded-lg text-xs text-emerald-300">
+          <strong>Test Successful:</strong> All {execution.totalRequests?.toLocaleString()} requests completed with an average throughput of {execution.avgRps?.toFixed(0)} req/s and passed all SLA criteria.
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricCard
